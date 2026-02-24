@@ -19,6 +19,12 @@
 
   <ItemGroup>
     <Folder Include="Controllers\" />
+    <Folder Include="Features\Auth\" />
+    <Folder Include="Features\Classes\" />
+    <Folder Include="Features\Gyms\" />
+    <Folder Include="Features\Members\" />
+    <Folder Include="Features\Memberships\" />
+    <Folder Include="Features\Payments\" />
   </ItemGroup>
 
 </Project>

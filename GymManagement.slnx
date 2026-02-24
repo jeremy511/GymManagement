@@ -1,15 +1,3 @@
 <Solution>
-  <Folder Name="/Features/" />
-  <Folder Name="/Features/Auth/" />
-  <Folder Name="/Features/Classes/" />
-  <Folder Name="/Features/Gyms/" />
-  <Folder Name="/Features/Members/" />
-  <Folder Name="/Features/Memberships/" />
-  <Folder Name="/Features/Payments/" />
-  <Folder Name="/Infrastructure/" />
-  <Folder Name="/Infrastructure/Persistence/">
-    <File Path="GymManagementDbContext.cs" />
-  </Folder>
-  <Folder Name="/Shared/" />
   <Project Path="GymManagement.Api/GymManagement.Api.csproj" />
 </Solution>
