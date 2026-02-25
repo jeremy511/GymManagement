@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "skills": {
+    "dotnet-backend-patterns": {
+      "source": "wshobson/agents",
+      "sourceType": "github",
+      "computedHash": "98495b77cf63cbd36e7f152c61d8eddff20d050f2cbc803b45cc6b5b9526cbf1"
+    }
+  }
+}

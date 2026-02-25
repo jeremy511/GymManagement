@@ -5,7 +5,7 @@ namespace GymManagement.Api.Features.Members.Domain
 {
     public class Member : ITenantEntity
     {
-        public Guid Id { get; private set; } = Guid.NewGuid();
+        public Guid Id { get; private set; }
         public Guid GymId { get; set; }
         public string FirstName { get; private set; } = default!;
         public string LastName { get; private set; } = default!;
@@ -15,8 +15,9 @@ namespace GymManagement.Api.Features.Members.Domain
 
         private Member() { }
 
-        public Member(Guid gymId, string firstName, string lastName, string email)
+        public Member(Guid id, Guid gymId, string firstName, string lastName, string email)
         {
+            Id = id;
             GymId = gymId;
             FirstName = firstName;
             LastName = lastName;

@@ -24,6 +24,7 @@ namespace GymManagement.Api.Features.Auth.Controllers
             _hasher = hasher;
             _jwt = jwt;
         }
+#region Register
 
         [AllowAnonymous]
         [HttpPost("register")]
@@ -73,7 +74,9 @@ namespace GymManagement.Api.Features.Auth.Controllers
 
             return Ok(new { token });
         }
+        #endregion
 
+        #region Login
         [HttpPost("login")]
         [AllowAnonymous]
         public async Task<IActionResult> Login([FromBody] LoginRequest req)
@@ -97,8 +100,11 @@ namespace GymManagement.Api.Features.Auth.Controllers
 
             return Ok(new { token });
         }
+        #endregion
     }
 
+    #region Requests
     public record RegisterRequest(string GymName, string Slug, string Email, string AdminName, string AdminEmail, string Password);
     public record LoginRequest(string Email, string Password);
+    #endregion
 }
