@@ -29,5 +29,11 @@
                 PasswordHash = passwordHash;
                 Role = role;
             }
+
+            public void Update(string name, string email)
+            {
+                Name = name;
+                Email = email;
+            }
         }
 }

@@ -1,0 +1,62 @@
+@baseUrl = http://localhost:5244/api
+@adminToken = TU_TOKEN_AQUÍ
+@memberToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJiOTEwZjdmYS0wZDQ0LTQ5NTYtODE5OC1kNTIzMDgyNzNiMTYiLCJ1c2VySWQiOiJiOTEwZjdmYS0wZDQ0LTQ5NTYtODE5OC1kNTIzMDgyNzNiMTYiLCJneW1faWQiOiJhNWIxMjdjNC01OWMwLTQwYWYtOTUwMy01ZTExNmRlYzIxZTMiLCJodHRwOi8vc2NoZW1hcy5taWNyb3NvZnQuY29tL3dzLzIwMDgvMDYvaWRlbnRpdHkvY2xhaW1zL3JvbGUiOiJBZG1pbiIsImV4cCI6MTc3MjA1NDMwMH0.OOadpaaEdQH2YkishBB7LiYUXGNl_ktCMIRK_2yQQgs
+
+### 1. LOGIN (ADMIN)
+# Copia el 'token' de la respuesta y pégalo en @adminToken arriba
+POST {{baseUrl}}/Auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@irontemple.com",
+  "password": "Admin123!"
+}
+
+### 2. LISTAR PLANES DE MEMBRESÍA
+GET {{baseUrl}}/membership-types
+Authorization: Bearer {{adminToken}}
+
+### 3. CREAR UN NUEVO MIEMBRO (Simulado)
+# Nota: En un sistema real, el miembro se crea al registrarse el usuario.
+# Aquí usamos el ID de un usuario existente para crear su perfil de miembro.
+POST {{baseUrl}}/members
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "firstName": "Prueba",
+  "lastName": "Validacion",
+  "email": "prueba.val@email.com"
+}
+
+### 4. INTENTAR RESERVAR SIN MEMBRESÍA (DEBE FALLAR)
+# Reemplaza {classId} con uno real de GET /api/classes
+POST {{baseUrl}}/classes/ID-DE-CLASE/reserve
+Authorization: Bearer {{memberToken}}
+
+### 5. ASIGNAR MEMBRESÍA AL MIEMBRO
+POST {{baseUrl}}/memberships
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "memberId": "ID-DEL-MIEMBRO",
+  "membershipTypeId": "ID-DEL-PLAN",
+  "startDate": "2026-02-25T00:00:00Z"
+}
+
+### 6. REINTENTAR RESERVA (DEBE FUNCIONAR)
+POST {{baseUrl}}/classes/ID-DE-CLASE/reserve
+Authorization: Bearer {{memberToken}}
+
+### 7. VER PERFIL DEL MIEMBRO (CON ESTADO AUTOMÁTICO)
+GET {{baseUrl}}/members/ID-DEL-MIEMBRO
+Authorization: Bearer {{adminToken}}
+
+### 8. BÚSQUEDA ADMINISTRATIVA DE MIEMBROS
+GET {{baseUrl}}/members?search=Prueba&page=1&pageSize=10
+Authorization: Bearer {{adminToken}}
+
+### 9. ELIMINAR MIEMBRO (SOFT DELETE)
+DELETE {{baseUrl}}/members/ID-DEL-MIEMBRO
+Authorization: Bearer {{adminToken}}

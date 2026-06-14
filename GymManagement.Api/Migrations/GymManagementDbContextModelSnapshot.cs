@@ -101,6 +101,9 @@ namespace GymManagement.Api.Migrations
                     b.Property<Guid>("GymId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
                     b.Property<DateTime>("StartAt")
                         .HasColumnType("datetime2");
 
@@ -133,6 +136,10 @@ namespace GymManagement.Api.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("ClassId");
+
+                    b.HasIndex("MemberId");
+
                     b.ToTable("Reservations");
                 });
 
@@ -156,6 +163,9 @@ namespace GymManagement.Api.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
                     b.Property<DateTime>("JoinedAt")
                         .HasColumnType("datetime2");
 
@@ -174,7 +184,7 @@ namespace GymManagement.Api.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTime>("End")
+                    b.Property<DateTime>("EndDate")
                         .HasColumnType("datetime2");
 
                     b.Property<Guid>("GymId")
@@ -183,19 +193,53 @@ namespace GymManagement.Api.Migrations
                     b.Property<Guid>("MemberId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<decimal>("Price")
+                    b.Property<Guid>("MembershipTypeId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal>("PricePaid")
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<DateTime>("Start")
+                    b.Property<DateTime>("StartDate")
                         .HasColumnType("datetime2");
-
-                    b.Property<string>("Type")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
+                    b.HasIndex("MemberId");
+
+                    b.HasIndex("MembershipTypeId");
+
                     b.ToTable("Memberships");
+                });
+
+            modelBuilder.Entity("GymManagement.Api.Features.Memberships.Domain.MembershipType", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("DurationMonths")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("GymId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal>("Price")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("MembershipTypes");
                 });
 
             modelBuilder.Entity("GymManagement.Api.Features.Payments.Domain.Payment", b =>
@@ -225,7 +269,77 @@ namespace GymManagement.Api.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("MemberId");
+
                     b.ToTable("Payments");
+                });
+
+            modelBuilder.Entity("GymManagement.Api.Features.Classes.Domain.Reservation", b =>
+                {
+                    b.HasOne("GymManagement.Api.Features.Classes.Domain.Class", "Class")
+                        .WithMany("Reservations")
+                        .HasForeignKey("ClassId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("GymManagement.Api.Features.Members.Domain.Member", "Member")
+                        .WithMany("Reservations")
+                        .HasForeignKey("MemberId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Class");
+
+                    b.Navigation("Member");
+                });
+
+            modelBuilder.Entity("GymManagement.Api.Features.Members.Domain.Membership", b =>
+                {
+                    b.HasOne("GymManagement.Api.Features.Members.Domain.Member", "Member")
+                        .WithMany("Memberships")
+                        .HasForeignKey("MemberId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("GymManagement.Api.Features.Memberships.Domain.MembershipType", "MembershipType")
+                        .WithMany("Memberships")
+                        .HasForeignKey("MembershipTypeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Member");
+
+                    b.Navigation("MembershipType");
+                });
+
+            modelBuilder.Entity("GymManagement.Api.Features.Payments.Domain.Payment", b =>
+                {
+                    b.HasOne("GymManagement.Api.Features.Members.Domain.Member", "Member")
+                        .WithMany("Payments")
+                        .HasForeignKey("MemberId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Member");
+                });
+
+            modelBuilder.Entity("GymManagement.Api.Features.Classes.Domain.Class", b =>
+                {
+                    b.Navigation("Reservations");
+                });
+
+            modelBuilder.Entity("GymManagement.Api.Features.Members.Domain.Member", b =>
+                {
+                    b.Navigation("Memberships");
+
+                    b.Navigation("Payments");
+
+                    b.Navigation("Reservations");
+                });
+
+            modelBuilder.Entity("GymManagement.Api.Features.Memberships.Domain.MembershipType", b =>
+                {
+                    b.Navigation("Memberships");
                 });
 #pragma warning restore 612, 618
         }

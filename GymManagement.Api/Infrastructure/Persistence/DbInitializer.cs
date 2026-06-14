@@ -1,4 +1,5 @@
 using GymManagement.Api.Features.Auth.Domain;
+using GymManagement.Api.Features.Gyms.Domain;
 using GymManagement.Api.Features.Members.Domain;
 using GymManagement.Api.Services;
 using Microsoft.EntityFrameworkCore;

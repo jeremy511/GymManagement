@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authentication.Negotiate;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi;
 using Scalar.AspNetCore;
 using System.Text;
 
@@ -12,8 +13,43 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 
-// ✅ OpenAPI nativo .NET 10
-builder.Services.AddOpenApi();
+// ✅ OpenAPI nativo .NET 10 con soporte para Authorize
+builder.Services.AddOpenApi(options =>
+{
+    options.AddDocumentTransformer((document, context, cancellationToken) =>
+    {
+        var schemeName = "Bearer";
+
+        // 1. Definir el esquema
+        var securityScheme = new Microsoft.OpenApi.OpenApiSecurityScheme
+        {
+            Type = Microsoft.OpenApi.SecuritySchemeType.Http,
+            Scheme = "bearer",
+            BearerFormat = "JWT",
+            Description = "Introduce tu token JWT"
+        };
+
+        // 2. Registrar en Components
+        document.Components ??= new Microsoft.OpenApi.OpenApiComponents();
+        if (document.Components.SecuritySchemes == null)
+        {
+            document.Components.SecuritySchemes = new Dictionary<string, Microsoft.OpenApi.IOpenApiSecurityScheme>();
+        }
+        document.Components.SecuritySchemes.Add(schemeName, securityScheme);
+
+        // 3. Aplicar GLOBALMENTE usando una Referencia
+        document.Security ??= new List<Microsoft.OpenApi.OpenApiSecurityRequirement>();
+        var requirement = new Microsoft.OpenApi.OpenApiSecurityRequirement
+        {
+            [new Microsoft.OpenApi.OpenApiSecuritySchemeReference(schemeName, document)] = new List<string>()
+        };
+        document.Security.Add(requirement);
+
+        return Task.CompletedTask;
+    });
+});
+
+
 
 // JWT
 var jwtSection = builder.Configuration.GetSection("Jwt");
@@ -43,6 +79,9 @@ builder.Services.AddScoped<ITenantProvider, HttpContextTenantProvider>();
 builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
 builder.Services.AddScoped<IJwtService>(sp => new JwtService(jwtKey));
 
+builder.Services.AddAutoMapper(typeof(GymManagement.Api.Infrastructure.Mapping.MappingProfile));
+builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Program).Assembly));
+
 builder.Services.AddDbContext<GymManagementDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
@@ -51,7 +90,12 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi(); // 
-    app.MapScalarApiReference();
+    app.MapScalarApiReference(options =>
+    {
+        options.WithHttpBearerAuthentication(bearer => {
+            bearer.Token = ""; // Scalar habilitará el campo de texto globalmente
+        });
+    });
 
     // Seeding
     using var scope = app.Services.CreateScope();

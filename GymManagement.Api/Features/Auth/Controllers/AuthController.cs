@@ -1,11 +1,10 @@
-using GymManagement.Api.Features.Auth.Domain;
-using GymManagement.Api.Infrastructure.Persistence;
-using GymManagement.Api.Services;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using System.Linq;
 using System.Threading.Tasks;
+using MediatR;
+using Microsoft.AspNetCore.Authorization;
+using GymManagement.Api.Features.Auth.Commands;
+using Microsoft.AspNetCore.Http;
+using System.ComponentModel.DataAnnotations;
 
 namespace GymManagement.Api.Features.Auth.Controllers
 {
@@ -14,97 +13,77 @@ namespace GymManagement.Api.Features.Auth.Controllers
     [Route("api/[controller]")]
     public class AuthController : ControllerBase
     {
-        private readonly GymManagementDbContext _db;
-        private readonly IPasswordHasher _hasher;
-        private readonly IJwtService _jwt;
+        private readonly ISender _mediator;
 
-        public AuthController(GymManagementDbContext db, IPasswordHasher hasher, IJwtService jwt)
+        public AuthController(ISender mediator)
         {
-            _db = db;
-            _hasher = hasher;
-            _jwt = jwt;
+            _mediator = mediator;
         }
-#region Register
 
         [AllowAnonymous]
         [HttpPost("register")]
+        [ProducesResponseType(typeof(AuthResponse), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> Register([FromBody] RegisterRequest req)
         {
-            if (string.IsNullOrWhiteSpace(req.GymName) ||
-                string.IsNullOrWhiteSpace(req.Slug) ||
-                string.IsNullOrWhiteSpace(req.AdminName) ||
-                string.IsNullOrWhiteSpace(req.AdminEmail) ||
-                string.IsNullOrWhiteSpace(req.Password))
-            {
-                return BadRequest("All fields are required.");
-            }
+            var command = new RegisterCommand(
+                req.GymName, 
+                req.Slug, 
+                req.Email, 
+                req.AdminName, 
+                req.AdminEmail, 
+                req.Password);
 
-            var normalizedEmail = req.AdminEmail.ToLower();
-            var normalizedSlug = req.Slug.ToLower();
+            var result = await _mediator.Send(command);
 
-            // Verificar slug único
-            var slugExists = await _db.Gyms
-                .AnyAsync(g => g.Slug == normalizedSlug);
-
-            if (slugExists)
-                return BadRequest("Gym slug already exists.");
-
-            // Verificar email único
-            var emailExists = await _db.Users
-                .AnyAsync(u => u.Email == normalizedEmail);
-
-            if (emailExists)
-                return BadRequest("Email already registered.");
-
-            var gym = new Gym(req.GymName, normalizedSlug, normalizedEmail);
-            await _db.Gyms.AddAsync(gym);
-
-            var user = new User(
-                gym.Id,
-                req.AdminName,
-                normalizedEmail,
-                _hasher.Hash(req.Password),
-                UserRole.Admin
-            );
-
-            await _db.Users.AddAsync(user);
-            await _db.SaveChangesAsync();
-
-            var token = _jwt.GenerateToken(user.Id, gym.Id, user.Role.ToString());
-
-            return Ok(new { token });
+            return result.IsSuccess 
+                ? Ok(result.Value) 
+                : BadRequest(new { error = result.Error, code = result.ErrorCode });
         }
-        #endregion
 
-        #region Login
         [HttpPost("login")]
         [AllowAnonymous]
+        [ProducesResponseType(typeof(AuthResponse), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> Login([FromBody] LoginRequest req)
         {
-            if (string.IsNullOrWhiteSpace(req.Email) ||
-                string.IsNullOrWhiteSpace(req.Password))
-            {
-                return BadRequest("Email and password are required.");
-            }
+            var command = new LoginCommand(req.Email, req.Password);
+            var result = await _mediator.Send(command);
 
-            var user = await _db.Users
-                .FirstOrDefaultAsync(u => u.Email == req.Email);
-
-            if (user == null)
-                return Unauthorized();
-
-            if (!_hasher.Verify(user.PasswordHash, req.Password))
-                return Unauthorized();
-
-            var token = _jwt.GenerateToken(user.Id, user.GymId, user.Role.ToString());
-
-            return Ok(new { token });
+            return result.IsSuccess 
+                ? Ok(result.Value) 
+                : Unauthorized(new { error = result.Error, code = result.ErrorCode });
         }
-        #endregion
+
+        [HttpPut("profile/{userId:guid}")]
+        [ProducesResponseType(typeof(AuthResponse), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> UpdateProfile(Guid userId, [FromBody] UpdateUserRequest req)
+        {
+            var command = new UpdateUserCommand(userId, req.Name, req.Email);
+            var result = await _mediator.Send(command);
+
+            return result.IsSuccess 
+                ? Ok(new AuthResponse { UserId = result.Value.Id, Email = result.Value.Email, GymId = result.Value.GymId }) 
+                : (result.ErrorCode == "NOT_FOUND" ? NotFound(result.Error) : BadRequest(result.Error));
+        }
     }
 
-    #region Requests
-    public record RegisterRequest(string GymName, string Slug, string Email, string AdminName, string AdminEmail, string Password);
-    public record LoginRequest(string Email, string Password);
-    #endregion
+    public record RegisterRequest(
+        [Required][StringLength(100)] string GymName, 
+        [Required][StringLength(50)] string Slug, 
+        [Required][EmailAddress] string Email, 
+        [Required][StringLength(100)] string AdminName, 
+        [Required][EmailAddress] string AdminEmail, 
+        [Required][MinLength(6)] string Password);
+
+    public record LoginRequest(
+        [Required][EmailAddress] string Email, 
+        [Required] string Password);
+
+    public record UpdateUserRequest(
+        [Required][StringLength(100)] string Name, 
+        [Required][EmailAddress] string Email);
 }

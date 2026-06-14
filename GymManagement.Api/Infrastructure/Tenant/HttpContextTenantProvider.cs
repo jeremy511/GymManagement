@@ -26,12 +26,6 @@ namespace GymManagement.Api.Infrastructure.Tenant
                 var claim = ctx.User?.FindFirst("gym_id")?.Value;
                 if (!string.IsNullOrEmpty(claim) && Guid.TryParse(claim, out var g)) return g;
 
-                // Try header
-                if (ctx.Request.Headers.TryGetValue("X-Gym-Id", out var header))
-                {
-                    if (Guid.TryParse(header.ToString(), out var h)) return h;
-                }
-
                 return Guid.Empty;
             }
         }

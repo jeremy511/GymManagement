@@ -20,6 +20,7 @@ namespace GymManagement.Api.Services
             var claims = new[]
             {
                 new Claim(JwtRegisteredClaimNames.Sub, userId.ToString()),
+                new Claim("userId", userId.ToString()),
                 new Claim("gym_id", gymId.ToString()),
                 new Claim(ClaimTypes.Role, role)
             };

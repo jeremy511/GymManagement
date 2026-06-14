@@ -1,4 +1,6 @@
-﻿using GymManagement.Api.Features.Auth.Domain;
+using GymManagement.Api.Features.Auth.Domain;
+using GymManagement.Api.Features.Gyms.Domain;
+using GymManagement.Api.Features.Memberships.Domain;
 using GymManagement.Api.Infrastructure.Tenant;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -26,51 +28,77 @@ public class GymManagementDbContext : DbContext
     public DbSet<User> Users => Set<User>();
     public DbSet<GymManagement.Api.Features.Members.Domain.Member> Members => Set<GymManagement.Api.Features.Members.Domain.Member>();
     public DbSet<GymManagement.Api.Features.Members.Domain.Membership> Memberships => Set<GymManagement.Api.Features.Members.Domain.Membership>();
+    public DbSet<MembershipType> MembershipTypes => Set<MembershipType>();
     public DbSet<GymManagement.Api.Features.Payments.Domain.Payment> Payments => Set<GymManagement.Api.Features.Payments.Domain.Payment>();
     public DbSet<GymManagement.Api.Features.Classes.Domain.Class> Classes => Set<GymManagement.Api.Features.Classes.Domain.Class>();
     public DbSet<GymManagement.Api.Features.Classes.Domain.Reservation> Reservations => Set<GymManagement.Api.Features.Classes.Domain.Reservation>();
     #endregion
 
-    #region Model Configuration
+    # region Model Configuration
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
 
-        // Example global query filter for tenant-scoped entities that have a GymId property.
-        // When CurrentGymId == Guid.Empty the filter is disabled (useful for admin operations and migrations).
-        modelBuilder.Entity<User>().HasQueryFilter(u => CurrentGymId == Guid.Empty || u.GymId == CurrentGymId);
-        
+        // Global query filters for multi-tenancy
+        modelBuilder.Entity<User>().HasQueryFilter(u => u.GymId == CurrentGymId);
+        modelBuilder.Entity<GymManagement.Api.Features.Members.Domain.Member>().HasQueryFilter(m => m.GymId == CurrentGymId && !m.IsDeleted);
+        modelBuilder.Entity<GymManagement.Api.Features.Members.Domain.Membership>().HasQueryFilter(m => m.GymId == CurrentGymId);
+        modelBuilder.Entity<MembershipType>().HasQueryFilter(mt => mt.GymId == CurrentGymId && !mt.IsDeleted);
+        modelBuilder.Entity<GymManagement.Api.Features.Payments.Domain.Payment>().HasQueryFilter(p => p.GymId == CurrentGymId);
+        modelBuilder.Entity<GymManagement.Api.Features.Classes.Domain.Class>().HasQueryFilter(c => c.GymId == CurrentGymId && !c.IsDeleted);
+        modelBuilder.Entity<GymManagement.Api.Features.Classes.Domain.Reservation>().HasQueryFilter(r => r.GymId == CurrentGymId);
 
-        modelBuilder.Entity<GymManagement.Api.Features.Members.Domain.Member>().HasQueryFilter(m => CurrentGymId == Guid.Empty || m.GymId == CurrentGymId);
-        modelBuilder.Entity<GymManagement.Api.Features.Members.Domain.Membership>().HasQueryFilter(m => CurrentGymId == Guid.Empty || m.GymId == CurrentGymId);
-        modelBuilder.Entity<GymManagement.Api.Features.Payments.Domain.Payment>().HasQueryFilter(p => CurrentGymId == Guid.Empty || p.GymId == CurrentGymId);
-        modelBuilder.Entity<GymManagement.Api.Features.Classes.Domain.Class>().HasQueryFilter(c => CurrentGymId == Guid.Empty || c.GymId == CurrentGymId);
-        modelBuilder.Entity<GymManagement.Api.Features.Classes.Domain.Reservation>().HasQueryFilter(r => CurrentGymId == Guid.Empty || r.GymId == CurrentGymId);
+        // Foreign Key Relationships
+        modelBuilder.Entity<GymManagement.Api.Features.Members.Domain.Member>(entity =>
+        {
+            entity.HasMany(m => m.Memberships).WithOne(ms => ms.Member).HasForeignKey(ms => ms.MemberId);
+            entity.HasMany(m => m.Reservations).WithOne(r => r.Member).HasForeignKey(r => r.MemberId);
+            entity.HasMany(m => m.Payments).WithOne(p => p.Member).HasForeignKey(p => p.MemberId);
+        });
+
+        modelBuilder.Entity<GymManagement.Api.Features.Classes.Domain.Class>(entity =>
+        {
+            entity.HasMany(c => c.Reservations).WithOne(r => r.Class).HasForeignKey(r => r.ClassId);
+        });
+
+        modelBuilder.Entity<GymManagement.Api.Features.Memberships.Domain.MembershipType>(entity =>
+        {
+            entity.HasMany(mt => mt.Memberships).WithOne(m => m.MembershipType).HasForeignKey(m => m.MembershipTypeId);
+        });
     }
     #endregion
 
     #region Save Changes logic
     public override int SaveChanges()
     {
-        AssignTenantToNewEntities();
+        OnBeforeSaving();
         return base.SaveChanges();
     }
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
-        AssignTenantToNewEntities();
+        OnBeforeSaving();
         return base.SaveChangesAsync(cancellationToken);
     }
 
-    private void AssignTenantToNewEntities()
+    private void OnBeforeSaving()
     {
-        if (CurrentGymId == Guid.Empty) return;
-
         foreach (var entry in ChangeTracker.Entries())
         {
-            if (entry.State == EntityState.Added && entry.Entity is ITenantEntity tenantEntity)
+            // Assign Tenant
+            if (entry.State == EntityState.Added && entry.Entity is ITenantEntity tenantEntity && CurrentGymId != Guid.Empty)
             {
                 tenantEntity.GymId = CurrentGymId;
+            }
+
+            // Handle Soft Delete
+            if (entry.Entity is ISoftDeletable softDeletable)
+            {
+                if (entry.State == EntityState.Deleted)
+                {
+                    entry.State = EntityState.Modified;
+                    softDeletable.IsDeleted = true;
+                }
             }
         }
     }

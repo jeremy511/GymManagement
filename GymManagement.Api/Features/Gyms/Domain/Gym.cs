@@ -1,4 +1,6 @@
-﻿namespace GymManagement.Api.Features.Auth.Domain
+using System;
+
+namespace GymManagement.Api.Features.Gyms.Domain
 {
     public class Gym
     {
@@ -16,6 +18,13 @@
             Name = name;
             Slug = slug;
             Email = email;
+        }
+
+        public void Update(string name, string email, string slug)
+        {
+            Name = name;
+            Email = email;
+            Slug = slug;
         }
     }
 }

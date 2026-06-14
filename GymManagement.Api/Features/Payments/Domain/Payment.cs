@@ -1,4 +1,5 @@
 using System;
+using GymManagement.Api.Features.Members.Domain;
 using GymManagement.Api.Infrastructure.Tenant;
 
 namespace GymManagement.Api.Features.Payments.Domain
@@ -13,6 +14,8 @@ namespace GymManagement.Api.Features.Payments.Domain
         public string Method { get; private set; } = default!;
         public string? ExternalReference { get; private set; }
 
+        public virtual Member Member { get; private set; } = default!;
+
         private Payment() { }
 
         public Payment(Guid gymId, Guid memberId, decimal amount, string method, string? externalReference = null)
@@ -20,6 +23,11 @@ namespace GymManagement.Api.Features.Payments.Domain
             GymId = gymId;
             MemberId = memberId;
             Amount = amount;
+            Method = method;
+            ExternalReference = externalReference;
+        }
+        public void Update(string method, string? externalReference)
+        {
             Method = method;
             ExternalReference = externalReference;
         }
