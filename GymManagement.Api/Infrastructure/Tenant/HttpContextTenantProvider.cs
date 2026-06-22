@@ -1,5 +1,7 @@
+using GymManagement.Api.Features.Gyms.Domain;
 using Microsoft.AspNetCore.Http;
 using System;
+using GymManagement.Api.Shared.Security;
 using System.Security.Claims;
 
 namespace GymManagement.Api.Infrastructure.Tenant
@@ -23,10 +25,13 @@ namespace GymManagement.Api.Infrastructure.Tenant
                 if (ctx == null) return Guid.Empty;
 
                 // Try claim
-                var claim = ctx.User?.FindFirst("gym_id")?.Value;
-                if (!string.IsNullOrEmpty(claim) && Guid.TryParse(claim, out var g)) return g;
+                var claim = ctx.User?.FindFirst(CustomClaims.GymId)?.Value;
 
-                return Guid.Empty;
+
+                if (!Guid.TryParse(claim, out var gymIdFromClaim))
+                    throw new UnauthorizedAccessException("Gym ID claim is missing or invalid.");
+
+                return GymId;
             }
         }
     }

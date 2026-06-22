@@ -1,17 +1,18 @@
-using Microsoft.AspNetCore.Mvc;
-using MediatR;
+using AutoMapper;
 using GymManagement.Api.Features.Payments.Commands;
 using GymManagement.Api.Features.Payments.Queries;
+using GymManagement.Api.Shared.Security;
+using MediatR;
 using Microsoft.AspNetCore.Authorization;
-using AutoMapper;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
 
 namespace GymManagement.Api.Features.Payments.Controllers
 {
     [ApiController]
     [Route("api/payments")]
-    [Authorize(Roles = "Admin,Staff")]
+    [Authorize(Roles = $"{Roles.Admin},{Roles.Staff}")]
     public class PaymentsController : ControllerBase
     {
         private readonly ISender _mediator;
@@ -31,7 +32,7 @@ namespace GymManagement.Api.Features.Payments.Controllers
             var command = new CreatePaymentCommand(req.MemberId, req.Amount, req.Method, req.ExternalReference);
             var result = await _mediator.Send(command);
 
-            return result.IsSuccess 
+            return result.IsSuccess
                 ? CreatedAtAction(nameof(Get), new { id = result.Value!.Id }, _mapper.Map<PaymentResponse>(result.Value))
                 : BadRequest(result.Error);
         }
@@ -80,19 +81,19 @@ namespace GymManagement.Api.Features.Payments.Controllers
             var command = new UpdatePaymentCommand(id, req.Method, req.ExternalReference);
             var result = await _mediator.Send(command);
 
-            return result.IsSuccess 
-                ? Ok(_mapper.Map<PaymentResponse>(result.Value)) 
+            return result.IsSuccess
+                ? Ok(_mapper.Map<PaymentResponse>(result.Value))
                 : (result.ErrorCode == "NOT_FOUND" ? NotFound(result.Error) : BadRequest(result.Error));
         }
     }
 
     public record CreatePaymentRequest(
-        [Required] Guid MemberId, 
-        [System.ComponentModel.DataAnnotations.Range(0.01, 1000000)] decimal Amount, 
-        [Required][StringLength(50)] string Method, 
+        [Required] Guid MemberId,
+        [System.ComponentModel.DataAnnotations.Range(0.01, 1000000)] decimal Amount,
+        [Required][StringLength(50)] string Method,
         [StringLength(100)] string? ExternalReference);
 
     public record UpdatePaymentRequest(
-        [Required][StringLength(50)] string Method, 
+        [Required][StringLength(50)] string Method,
         [StringLength(100)] string? ExternalReference);
 }

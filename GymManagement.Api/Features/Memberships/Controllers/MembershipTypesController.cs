@@ -1,20 +1,21 @@
-using Microsoft.AspNetCore.Mvc;
-using System.Threading.Tasks;
-using System;
-using Microsoft.AspNetCore.Authorization;
-using MediatR;
-using GymManagement.Api.Features.Memberships.Commands;
-using GymManagement.Api.Features.Memberships.Queries;
 using AutoMapper;
+using GymManagement.Api.Features.Memberships.Commands;
 using GymManagement.Api.Features.Memberships.Controllers;
+using GymManagement.Api.Features.Memberships.Queries;
+using GymManagement.Api.Shared.Security;
+using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using System;
 using System.ComponentModel.DataAnnotations;
+using System.Threading.Tasks;
 
 namespace GymManagement.Api.Features.Memberships.Controllers
 {
     [ApiController]
     [Route("api/membership-types")]
-    [Authorize(Roles = "Admin,Staff")]
+    [Authorize(Roles = $"{Roles.Admin},{Roles.Staff}")]
     public class MembershipTypesController : ControllerBase
     {
         private readonly ISender _mediator;
@@ -34,7 +35,7 @@ namespace GymManagement.Api.Features.Memberships.Controllers
             var command = new CreateMembershipTypeCommand(req.Name, req.Description, req.Price, req.DurationMonths);
             var result = await _mediator.Send(command);
 
-            return result.IsSuccess 
+            return result.IsSuccess
                 ? CreatedAtAction(nameof(List), new { }, _mapper.Map<MembershipTypeResponse>(result.Value))
                 : BadRequest(result.Error);
         }
@@ -73,9 +74,9 @@ namespace GymManagement.Api.Features.Memberships.Controllers
     }
 
     public record CreateMembershipTypeRequest(
-        [Required][StringLength(100)] string Name, 
-        [Required][StringLength(500)] string Description, 
-        [Range(0, 1000000)] decimal Price, 
+        [Required][StringLength(100)] string Name,
+        [Required][StringLength(500)] string Description,
+        [Range(0, 1000000)] decimal Price,
         [Range(1, 120)] int DurationMonths);
 
     public record UpdateMembershipTypeRequest(

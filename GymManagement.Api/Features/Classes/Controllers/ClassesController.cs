@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authorization;
 using MediatR;
 using GymManagement.Api.Features.Classes.Commands;
 using GymManagement.Api.Features.Classes.Queries;
+using GymManagement.Api.Shared.Security;
 using AutoMapper;
 using Microsoft.AspNetCore.Http;
 using System.ComponentModel.DataAnnotations;
@@ -25,7 +26,7 @@ namespace GymManagement.Api.Features.Classes.Controllers
         }
 
         [HttpPost]
-        [Authorize(Roles = "Admin,Staff")]
+        [Authorize(Roles = $"{Roles.Admin},{Roles.Staff}")]
         [ProducesResponseType(typeof(ClassResponse), StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> Create([FromBody] CreateClassRequest req)
@@ -33,7 +34,7 @@ namespace GymManagement.Api.Features.Classes.Controllers
             var command = new CreateClassCommand(req.Title, req.StartAt, req.EndAt, req.Capacity);
             var result = await _mediator.Send(command);
 
-            return result.IsSuccess 
+            return result.IsSuccess
                 ? CreatedAtAction(nameof(Get), new { id = result.Value!.Id }, _mapper.Map<ClassResponse>(result.Value))
                 : BadRequest(result.Error);
         }
@@ -58,15 +59,15 @@ namespace GymManagement.Api.Features.Classes.Controllers
         }
 
         [HttpPost("{id}/reserve")]
-        [Authorize(Roles = "Member")]
+        [Authorize(Roles = Roles.Member)]
         [ProducesResponseType(typeof(ReservationResponse), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> Reserve(Guid id)
         {
             var result = await _mediator.Send(new ReserveClassCommand(id));
 
-            return result.IsSuccess 
-                ? Ok(_mapper.Map<ReservationResponse>(result.Value)) 
+            return result.IsSuccess
+                ? Ok(_mapper.Map<ReservationResponse>(result.Value))
                 : BadRequest(new { error = result.Error, code = result.ErrorCode });
         }
 
@@ -91,7 +92,7 @@ namespace GymManagement.Api.Features.Classes.Controllers
         }
 
         [HttpGet("{id}/reservations")]
-        [Authorize(Roles = "Admin,Staff")]
+        [Authorize(Roles = $"{Roles.Admin},{Roles.Staff}")]
         public async Task<IActionResult> GetReservations(Guid id)
         {
             var result = await _mediator.Send(new GetClassReservationsQuery(id));
@@ -99,7 +100,7 @@ namespace GymManagement.Api.Features.Classes.Controllers
         }
 
         [HttpDelete("{id}")]
-        [Authorize(Roles = "Admin,Staff")]
+        [Authorize(Roles = $"{Roles.Admin},{Roles.Staff}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> Delete(Guid id)
@@ -112,8 +113,8 @@ namespace GymManagement.Api.Features.Classes.Controllers
     }
 
     public record CreateClassRequest(
-        [Required][StringLength(100)] string Title, 
-        [Required] DateTime StartAt, 
-        [Required] DateTime EndAt, 
+        [Required][StringLength(100)] string Title,
+        [Required] DateTime StartAt,
+        [Required] DateTime EndAt,
         [System.ComponentModel.DataAnnotations.Range(1, 1000)] int Capacity);
 }

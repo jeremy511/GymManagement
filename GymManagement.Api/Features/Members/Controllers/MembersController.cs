@@ -1,19 +1,20 @@
-using Microsoft.AspNetCore.Mvc;
-using System.Threading.Tasks;
-using System;
-using Microsoft.AspNetCore.Authorization;
-using MediatR;
+using AutoMapper;
 using GymManagement.Api.Features.Members.Commands;
 using GymManagement.Api.Features.Members.Queries;
-using AutoMapper;
+using GymManagement.Api.Shared.Security;
+using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using System;
 using System.ComponentModel.DataAnnotations;
+using System.Threading.Tasks;
 
 namespace GymManagement.Api.Features.Members.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize(Roles = "Admin,Staff")]
+    [Authorize(Roles = $"{Roles.Admin},{Roles.Staff}")]
     public class MembersController : ControllerBase
     {
         private readonly ISender _mediator;
@@ -33,7 +34,7 @@ namespace GymManagement.Api.Features.Members.Controllers
             var command = new CreateMemberCommand(req.FirstName, req.LastName, req.Email);
             var result = await _mediator.Send(command);
 
-            return result.IsSuccess 
+            return result.IsSuccess
                 ? CreatedAtAction(nameof(Get), new { id = result.Value!.Id }, _mapper.Map<MemberResponse>(result.Value))
                 : (result.ErrorCode == "UNAUTHORIZED" ? Unauthorized() : BadRequest(result.Error));
         }
@@ -57,7 +58,7 @@ namespace GymManagement.Api.Features.Members.Controllers
             var member = await _mediator.Send(query);
 
             if (member == null) return NotFound();
-            
+
             var userRole = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
             var userIdClaim = User.FindFirst("userId")?.Value;
 
@@ -67,7 +68,7 @@ namespace GymManagement.Api.Features.Members.Controllers
 
             if (userRole == "Member" && userId != id)
                 return Forbid();
-                
+
             return Ok(member);
         }
 
@@ -91,16 +92,16 @@ namespace GymManagement.Api.Features.Members.Controllers
             var command = new UpdateMemberCommand(id, req.FirstName, req.LastName, req.Email);
             var result = await _mediator.Send(command);
 
-            return result.IsSuccess 
-                ? Ok(_mapper.Map<MemberResponse>(result.Value)) 
+            return result.IsSuccess
+                ? Ok(_mapper.Map<MemberResponse>(result.Value))
                 : (result.ErrorCode == "NOT_FOUND" ? NotFound(result.Error) : BadRequest(result.Error));
         }
     }
 
     #region Requests/Responses
     public record CreateMemberRequest(
-        [Required][StringLength(100)] string FirstName, 
-        [Required][StringLength(100)] string LastName, 
+        [Required][StringLength(100)] string FirstName,
+        [Required][StringLength(100)] string LastName,
         [Required][EmailAddress] string Email);
     public record MemberResponse
     {
@@ -114,8 +115,8 @@ namespace GymManagement.Api.Features.Members.Controllers
     }
 
     public record UpdateMemberRequest(
-        [Required][StringLength(100)] string FirstName, 
-        [Required][StringLength(100)] string LastName, 
+        [Required][StringLength(100)] string FirstName,
+        [Required][StringLength(100)] string LastName,
         [Required][EmailAddress] string Email);
     #endregion
 }

@@ -1,20 +1,21 @@
-using Microsoft.AspNetCore.Mvc;
-using System.Threading.Tasks;
-using System;
-using Microsoft.AspNetCore.Authorization;
-using MediatR;
-using GymManagement.Api.Features.Memberships.Commands;
-using GymManagement.Api.Features.Memberships.Queries;
 using AutoMapper;
+using GymManagement.Api.Features.Memberships.Commands;
 using GymManagement.Api.Features.Memberships.Controllers;
+using GymManagement.Api.Features.Memberships.Queries;
+using GymManagement.Api.Shared.Security;
+using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using System;
 using System.ComponentModel.DataAnnotations;
+using System.Threading.Tasks;
 
 namespace GymManagement.Api.Features.Memberships.Controllers
 {
     [ApiController]
     [Route("api/memberships")]
-    [Authorize(Roles = "Admin,Staff")]
+    [Authorize(Roles = $"{Roles.Admin},{Roles.Staff}")]
     public class MembershipsController : ControllerBase
     {
         private readonly ISender _mediator;
@@ -65,7 +66,7 @@ namespace GymManagement.Api.Features.Memberships.Controllers
     }
 
     public record CreateMembershipRequest(
-        [Required] Guid MemberId, 
-        [Required] Guid MembershipTypeId, 
+        [Required] Guid MemberId,
+        [Required] Guid MembershipTypeId,
         DateTime? StartDate);
 }

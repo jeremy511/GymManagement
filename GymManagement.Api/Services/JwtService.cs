@@ -3,6 +3,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using Microsoft.IdentityModel.Tokens;
+using GymManagement.Api.Shared.Security;
 
 namespace GymManagement.Api.Services
 {
@@ -17,11 +18,12 @@ namespace GymManagement.Api.Services
 
         public string GenerateToken(Guid userId, Guid gymId, string role, int expiresMinutes = 60)
         {
+
             var claims = new[]
             {
                 new Claim(JwtRegisteredClaimNames.Sub, userId.ToString()),
-                new Claim("userId", userId.ToString()),
-                new Claim("gym_id", gymId.ToString()),
+                new Claim(CustomClaims.UserId, userId.ToString()),
+                new Claim(CustomClaims.GymId, gymId.ToString()),
                 new Claim(ClaimTypes.Role, role)
             };
 
