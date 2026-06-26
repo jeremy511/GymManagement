@@ -9,9 +9,9 @@ using System.ComponentModel.DataAnnotations;
 namespace GymManagement.Api.Features.Payments.Commands
 {
     public record CreatePaymentCommand(
-        [Required] Guid MemberId, 
-        [System.ComponentModel.DataAnnotations.Range(0.01, 1000000)] decimal Amount, 
-        [Required][StringLength(50)] string Method, 
+        [Required] Guid MemberId,
+        [System.ComponentModel.DataAnnotations.Range(0.01, 1000000)] decimal Amount,
+        [Required] PaymentMethod Method,
         [StringLength(100)] string? ExternalReference) : IRequest<Result<Payment>>;
 
     public class CreatePaymentCommandHandler : IRequestHandler<CreatePaymentCommand, Result<Payment>>
@@ -27,6 +27,9 @@ namespace GymManagement.Api.Features.Payments.Commands
 
         public async Task<Result<Payment>> Handle(CreatePaymentCommand request, CancellationToken cancellationToken)
         {
+            if (_tenantProvider.GymId == Guid.Empty)
+                return Result<Payment>.Failure("Gym context is missing.", "GYM_CONTEXT_MISSING");
+
             var memberExists = await _db.Members.AnyAsync(m => m.Id == request.MemberId, cancellationToken);
             if (!memberExists) return Result<Payment>.Failure("Member not found", "MEMBER_NOT_FOUND");
 

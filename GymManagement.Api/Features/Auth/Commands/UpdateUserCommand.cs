@@ -24,7 +24,7 @@ namespace GymManagement.Api.Features.Auth.Commands
         public async Task<Result<User>> Handle(UpdateUserCommand req, CancellationToken cancellationToken)
         {
             var user = await _db.Users
-                .FirstOrDefaultAsync(u => u.Id == req.UserId, cancellationToken);
+            .FirstOrDefaultAsync(u => u.Id == req.UserId, cancellationToken);
 
             if (user == null)
                 return Result<User>.Failure("User not found.", "NOT_FOUND");

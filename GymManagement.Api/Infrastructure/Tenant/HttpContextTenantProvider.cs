@@ -24,14 +24,26 @@ namespace GymManagement.Api.Infrastructure.Tenant
                 var ctx = _httpContextAccessor.HttpContext;
                 if (ctx == null) return Guid.Empty;
 
-                // Try claim
-                var claim = ctx.User?.FindFirst(CustomClaims.GymId)?.Value;
+                // Try JWT claim
+                var claimValue = ctx.User?.FindFirst(CustomClaims.GymId)?.Value;
 
+                if (!string.IsNullOrWhiteSpace(claimValue) && Guid.TryParse(claimValue, out var gymIdFromClaim))
+                {
 
-                if (!Guid.TryParse(claim, out var gymIdFromClaim))
-                    throw new UnauthorizedAccessException("Gym ID claim is missing or invalid.");
+                    return gymIdFromClaim;
+                }
 
-                return GymId;
+                //fallback to header
+                if (ctx.Request?.Headers != null && ctx.Request.Headers.TryGetValue("X-Gym-Id", out var headerValue))
+                {
+                    var header = headerValue.FirstOrDefault();
+                    if (!string.IsNullOrWhiteSpace(header) && Guid.TryParse(header, out var gymIdFromHeader))
+                        return gymIdFromHeader;
+
+                }
+
+                // No gym id -> return empty (DbContext treats as admin/no-filter)
+                return Guid.Empty;
             }
         }
     }

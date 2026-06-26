@@ -2,6 +2,7 @@ using AutoMapper;
 using GymManagement.Api.Features.Payments.Commands;
 using GymManagement.Api.Features.Payments.Queries;
 using GymManagement.Api.Shared.Security;
+using GymManagement.Api.Features.Payments.Domain;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -29,7 +30,11 @@ namespace GymManagement.Api.Features.Payments.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> Create([FromBody] CreatePaymentRequest req)
         {
-            var command = new CreatePaymentCommand(req.MemberId, req.Amount, req.Method, req.ExternalReference);
+            if (!Enum.TryParse<PaymentMethod>(req.Method, true, out var paymentmethod))
+            {
+                return BadRequest($"Invalid payment method: {req.Method}");
+            }
+            var command = new CreatePaymentCommand(req.MemberId, req.Amount, paymentmethod, req.ExternalReference);
             var result = await _mediator.Send(command);
 
             return result.IsSuccess
@@ -78,7 +83,11 @@ namespace GymManagement.Api.Features.Payments.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> Update(Guid id, [FromBody] UpdatePaymentRequest req)
         {
-            var command = new UpdatePaymentCommand(id, req.Method, req.ExternalReference);
+            if (!Enum.TryParse<PaymentMethod>(req.Method, true, out var paymentmethod))
+            {
+                return BadRequest($"Invalid payment method: {req.Method}");
+            }
+            var command = new UpdatePaymentCommand(id, paymentmethod, req.ExternalReference);
             var result = await _mediator.Send(command);
 
             return result.IsSuccess
