@@ -1,6 +1,6 @@
 @baseUrl = http://localhost:5244/api
 @adminToken = TU_TOKEN_AQUÍ
-@memberToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJiOTEwZjdmYS0wZDQ0LTQ5NTYtODE5OC1kNTIzMDgyNzNiMTYiLCJ1c2VySWQiOiJiOTEwZjdmYS0wZDQ0LTQ5NTYtODE5OC1kNTIzMDgyNzNiMTYiLCJneW1faWQiOiJhNWIxMjdjNC01OWMwLTQwYWYtOTUwMy01ZTExNmRlYzIxZTMiLCJodHRwOi8vc2NoZW1hcy5taWNyb3NvZnQuY29tL3dzLzIwMDgvMDYvaWRlbnRpdHkvY2xhaW1zL3JvbGUiOiJBZG1pbiIsImV4cCI6MTc3MjA1NDMwMH0.OOadpaaEdQH2YkishBB7LiYUXGNl_ktCMIRK_2yQQgs
+@memberToken = TU_TOKEN_AQUÍ
 
 ### 1. LOGIN (ADMIN)
 # Copia el 'token' de la respuesta y pégalo en @adminToken arriba

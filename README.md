@@ -72,7 +72,7 @@ docker compose up --build
 ```
 
 - API: http://localhost:8080
-- SQL Server: `localhost:1433` (`sa` / `YourStrong!Passw0rd`)
+- SQL Server: `localhost:1433` (user `sa`; the password is defined in `GymManagement.Api/docker-compose.yaml` — change it for any non-local use)
 
 On startup in Development the API applies EF Core migrations and seeds initial data (see [Seeded data](#seeded-data)).
 
@@ -81,13 +81,13 @@ On startup in Development the API applies EF Core migrations and seeds initial d
 1. Configure the SQL Server connection string. The API reads `ConnectionStrings:DefaultConnection`; set it via `appsettings.json`, user secrets, or an environment variable, e.g.:
 
    ```bash
-   export ConnectionStrings__DefaultConnection="Server=localhost;Initial Catalog=GymManagementDb;User Id=sa;Password=YourStrong!Passw0rd;TrustServerCertificate=True"
+   export ConnectionStrings__DefaultConnection="Server=localhost;Initial Catalog=GymManagementDb;User Id=sa;Password=<YOUR_DB_PASSWORD>;TrustServerCertificate=True"
    ```
 
-2. (Optional) set a strong JWT signing key — the default fallback is for development only:
+2. Set a strong JWT signing key (do not rely on the built-in development fallback in production):
 
    ```bash
-   export Jwt__Key="a-strong-secret-signing-key"
+   export Jwt__Key="<YOUR_STRONG_SIGNING_KEY>"
    ```
 
 3. Run the API:
@@ -126,13 +126,7 @@ Tokens embed the `userId`, `gym_id`, and `role` claims used for tenancy and auth
 
 ### Seeded data
 
-In Development, the database is seeded with a sample gym and accounts:
-
-| Role | Email | Password |
-| --- | --- | --- |
-| Admin | `admin@irontemple.com` | `Admin123!` |
-| Member | `juan.perez@email.com` | `Member123!` |
-| Member | `maria.garcia@email.com` | `Member123!` |
+In Development, the database is seeded with a sample gym, an admin account, and a couple of member accounts. The credentials are defined in `GymManagement.Api/Infrastructure/Persistence/DbInitializer.cs` — review them there and change them before exposing the app outside local development.
 
 ## API Overview
 
