@@ -87,7 +87,8 @@ builder.Services.AddOpenApi(options =>
 
 // JWT
 var jwtSection = builder.Configuration.GetSection("Jwt");
-var jwtKey = jwtSection.GetValue<string>("Key") ?? "please-use-a-strong-key-in-production";
+var jwtKey = jwtSection.GetValue<string>("Key")
+    ?? throw new InvalidOperationException("Missing required configuration 'Jwt:Key'. Set it via environment variable, user secrets, or appsettings.");
 
 builder.Services.AddAuthentication(options =>
 {

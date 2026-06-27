@@ -64,15 +64,16 @@ GymManagement.Api/
 
 ### Run with Docker Compose (recommended)
 
-This starts both the API and a SQL Server instance. The compose file lives in `GymManagement.Api/`:
+This starts both the API and a SQL Server instance. The compose file lives in `GymManagement.Api/` and reads secrets from a local `.env` file (gitignored). Create it first from the template:
 
 ```bash
 cd GymManagement.Api
+cp .env.example .env   # then edit .env and set MSSQL_SA_PASSWORD and JWT_KEY
 docker compose up --build
 ```
 
 - API: http://localhost:8080
-- SQL Server: `localhost:1433` (user `sa`; the password is defined in `GymManagement.Api/docker-compose.yaml` — change it for any non-local use)
+- SQL Server: `localhost:1433` (user `sa`, password = `MSSQL_SA_PASSWORD` from your `.env`)
 
 On startup in Development the API applies EF Core migrations and seeds initial data (see [Seeded data](#seeded-data)).
 
@@ -84,7 +85,7 @@ On startup in Development the API applies EF Core migrations and seeds initial d
    export ConnectionStrings__DefaultConnection="Server=localhost;Initial Catalog=GymManagementDb;User Id=sa;Password=<YOUR_DB_PASSWORD>;TrustServerCertificate=True"
    ```
 
-2. Set a strong JWT signing key (do not rely on the built-in development fallback in production):
+2. Set a strong JWT signing key. `Jwt:Key` is **required** — the API throws on startup if it is missing:
 
    ```bash
    export Jwt__Key="<YOUR_STRONG_SIGNING_KEY>"
