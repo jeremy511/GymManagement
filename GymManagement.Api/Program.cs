@@ -7,9 +7,41 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using Scalar.AspNetCore;
+using Serilog;
 using System.Text;
+using AspNetCoreRateLimit;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddMemoryCache();
+builder.Services.Configure<IpRateLimitOptions>(options =>
+{
+    options.GeneralRules = new List<RateLimitRule>
+    {
+        new RateLimitRule
+        {
+            Endpoint = "*",
+            Limit = 100,
+            Period = "1m"
+        },
+        new RateLimitRule
+        {
+            Endpoint = "/api/Account/Login",
+            Limit = 5,
+            Period = "1m"
+        },
+        new RateLimitRule
+        {
+            Endpoint = "POST:/api/payments",
+            Limit = 20,
+            Period = "5m"
+        }
+    };
+});
+
+builder.Services.AddSingleton<IRateLimitCounterStore, MemoryCacheRateLimitCounterStore>();
+builder.Services.AddSingleton<IIpPolicyStore, MemoryCacheIpPolicyStore>();
+builder.Services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>();
 
 builder.Services.AddControllers();
 
@@ -85,6 +117,20 @@ builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Progr
 builder.Services.AddDbContext<GymManagementDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+
+builder.Host.UseSerilog((context, configuration) =>
+{
+    configuration
+    .MinimumLevel.Information()
+    .WriteTo.Console()
+    .WriteTo.File(
+        path: "Logs/app-.log",
+        outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj}{NewLine}{Exception}",
+        rollingInterval: RollingInterval.Day,
+        retainedFileCountLimit: 7);
+
+});
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -92,7 +138,8 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi(); // 
     app.MapScalarApiReference(options =>
     {
-        options.WithHttpBearerAuthentication(bearer => {
+        options.WithHttpBearerAuthentication(bearer =>
+        {
             bearer.Token = ""; // Scalar habilitará el campo de texto globalmente
         });
     });
@@ -107,6 +154,7 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseIpRateLimiting();
 
 app.MapControllers();
 
