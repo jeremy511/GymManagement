@@ -9,7 +9,7 @@ namespace GymManagement.Api.Features.Payments.Commands
 {
     public record UpdatePaymentCommand(
         Guid PaymentId,
-        [Required][StringLength(50)] string Method,
+        [Required] PaymentMethod Method,
         [StringLength(100)] string? ExternalReference) : IRequest<Result<Payment>>;
 
     public class UpdatePaymentCommandHandler : IRequestHandler<UpdatePaymentCommand, Result<Payment>>

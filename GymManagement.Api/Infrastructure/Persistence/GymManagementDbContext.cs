@@ -64,6 +64,18 @@ public class GymManagementDbContext : DbContext
         modelBuilder.Entity<GymManagement.Api.Features.Memberships.Domain.MembershipType>(entity =>
         {
             entity.HasMany(mt => mt.Memberships).WithOne(m => m.MembershipType).HasForeignKey(m => m.MembershipTypeId);
+            entity.Property(mt => mt.Price).HasPrecision(18, 2);
+        });
+
+        // Decimal precision configuration
+        modelBuilder.Entity<GymManagement.Api.Features.Payments.Domain.Payment>(entity =>
+        {
+            entity.Property(p => p.Amount).HasPrecision(18, 2);
+        });
+
+        modelBuilder.Entity<GymManagement.Api.Features.Members.Domain.Membership>(entity =>
+        {
+            entity.Property(m => m.PricePaid).HasPrecision(18, 2);
         });
     }
     #endregion

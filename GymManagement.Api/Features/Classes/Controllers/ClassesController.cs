@@ -18,11 +18,13 @@ namespace GymManagement.Api.Features.Classes.Controllers
     {
         private readonly ISender _mediator;
         private readonly IMapper _mapper;
+        private readonly ILogger<ClassesController> _logger;
 
-        public ClassesController(ISender mediator, IMapper mapper)
+        public ClassesController(ISender mediator, IMapper mapper, ILogger<ClassesController> logger)
         {
             _mediator = mediator;
             _mapper = mapper;
+            _logger = logger;
         }
 
         [HttpPost]
@@ -31,19 +33,32 @@ namespace GymManagement.Api.Features.Classes.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> Create([FromBody] CreateClassRequest req)
         {
+            _logger.LogInformation("Creating class: {Title}, start: {StartAt}, end: {EndAt}, capacity: {Capacity}", 
+                req.Title, req.StartAt, req.EndAt, req.Capacity);
+
             var command = new CreateClassCommand(req.Title, req.StartAt, req.EndAt, req.Capacity);
             var result = await _mediator.Send(command);
 
-            return result.IsSuccess
-                ? CreatedAtAction(nameof(Get), new { id = result.Value!.Id }, _mapper.Map<ClassResponse>(result.Value))
-                : BadRequest(result.Error);
+            if (result.IsSuccess)
+            {
+                _logger.LogInformation("Class {ClassId} created successfully: {Title}", result.Value!.Id, req.Title);
+                return CreatedAtAction(nameof(Get), new { id = result.Value!.Id }, _mapper.Map<ClassResponse>(result.Value));
+            }
+
+            _logger.LogError("Failed to create class {Title}: {Error}", req.Title, result.Error);
+            return BadRequest(result.Error);
         }
 
         [HttpGet]
         [Authorize]
         public async Task<IActionResult> List()
         {
+            _logger.LogInformation("Listing all classes");
+
             var result = await _mediator.Send(new ListClassesQuery());
+            _logger.LogInformation("Retrieved {ClassCount} classes", 
+                (result as System.Collections.ICollection)?.Count ?? 0);
+
             return Ok(result);
         }
 
@@ -53,8 +68,17 @@ namespace GymManagement.Api.Features.Classes.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> Get(Guid id)
         {
+            _logger.LogInformation("Retrieving class {ClassId}", id);
+
             var result = await _mediator.Send(new GetClassQuery(id));
-            if (result == null) return NotFound();
+
+            if (result == null)
+            {
+                _logger.LogWarning("Class {ClassId} not found", id);
+                return NotFound();
+            }
+
+            _logger.LogInformation("Class {ClassId} retrieved successfully", id);
             return Ok(result);
         }
 
@@ -64,11 +88,19 @@ namespace GymManagement.Api.Features.Classes.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> Reserve(Guid id)
         {
+            _logger.LogInformation("Member reserving class {ClassId}", id);
+
             var result = await _mediator.Send(new ReserveClassCommand(id));
 
-            return result.IsSuccess
-                ? Ok(_mapper.Map<ReservationResponse>(result.Value))
-                : BadRequest(new { error = result.Error, code = result.ErrorCode });
+            if (result.IsSuccess)
+            {
+                _logger.LogInformation("Reservation {ReservationId} created for class {ClassId}", 
+                    result.Value!.Id, id);
+                return Ok(_mapper.Map<ReservationResponse>(result.Value));
+            }
+
+            _logger.LogWarning("Failed to reserve class {ClassId}: {Error}", id, result.Error);
+            return BadRequest(new { error = result.Error, code = result.ErrorCode });
         }
 
         [HttpDelete("reservations/{reservationId}")]
@@ -79,15 +111,29 @@ namespace GymManagement.Api.Features.Classes.Controllers
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<IActionResult> CancelReservation(Guid reservationId)
         {
+            _logger.LogInformation("Canceling reservation {ReservationId}", reservationId);
+
             var result = await _mediator.Send(new CancelReservationCommand(reservationId));
 
             if (!result.IsSuccess)
             {
-                if (result.ErrorCode == "NOT_FOUND") return NotFound();
-                if (result.ErrorCode == "FORBIDDEN") return Forbid();
+                if (result.ErrorCode == "NOT_FOUND")
+                {
+                    _logger.LogWarning("Reservation {ReservationId} not found", reservationId);
+                    return NotFound();
+                }
+
+                if (result.ErrorCode == "FORBIDDEN")
+                {
+                    _logger.LogWarning("Access denied to cancel reservation {ReservationId}", reservationId);
+                    return Forbid();
+                }
+
+                _logger.LogError("Failed to cancel reservation {ReservationId}: {Error}", reservationId, result.Error);
                 return BadRequest(result.Error);
             }
 
+            _logger.LogInformation("Reservation {ReservationId} cancelled successfully", reservationId);
             return NoContent();
         }
 
@@ -95,7 +141,12 @@ namespace GymManagement.Api.Features.Classes.Controllers
         [Authorize(Roles = $"{Roles.Admin},{Roles.Staff}")]
         public async Task<IActionResult> GetReservations(Guid id)
         {
+            _logger.LogInformation("Retrieving reservations for class {ClassId}", id);
+
             var result = await _mediator.Send(new GetClassReservationsQuery(id));
+            _logger.LogInformation("Retrieved {ReservationCount} reservations for class {ClassId}", 
+                (result as System.Collections.ICollection)?.Count ?? 0, id);
+
             return Ok(result);
         }
 
