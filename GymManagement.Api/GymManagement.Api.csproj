@@ -7,10 +7,10 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-	  <Compile Remove="Controllers\**" />
-	  <Content Remove="Controllers\**" />
-	  <EmbeddedResource Remove="Controllers\**" />
-	  <None Remove="Controllers\**" />
+		<Compile Remove="Controllers\**" />
+		<Content Remove="Controllers\**" />
+		<EmbeddedResource Remove="Controllers\**" />
+		<None Remove="Controllers\**" />
 	</ItemGroup>
 
 	<ItemGroup>
