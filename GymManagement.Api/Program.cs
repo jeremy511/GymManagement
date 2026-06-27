@@ -11,9 +11,11 @@ using Serilog;
 using System.Text;
 using AspNetCoreRateLimit;
 
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddMemoryCache();
+builder.Services.AddInMemoryRateLimiting();
 builder.Services.Configure<IpRateLimitOptions>(options =>
 {
     options.GeneralRules = new List<RateLimitRule>
@@ -115,7 +117,7 @@ builder.Services.AddAutoMapper(typeof(GymManagement.Api.Infrastructure.Mapping.M
 builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Program).Assembly));
 
 builder.Services.AddDbContext<GymManagementDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"), sqlOptions => sqlOptions.EnableRetryOnFailure()));
 
 
 builder.Host.UseSerilog((context, configuration) =>
@@ -147,14 +149,16 @@ if (app.Environment.IsDevelopment())
     // Seeding
     using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<GymManagementDbContext>();
+    await db.Database.MigrateAsync();
     var hasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher>();
     await DbInitializer.SeedAsync(db, hasher);
 }
 
 app.UseHttpsRedirection();
+app.UseIpRateLimiting();
 app.UseAuthentication();
 app.UseAuthorization();
-app.UseIpRateLimiting();
+
 
 app.MapControllers();
 
