@@ -1,6 +1,6 @@
 <Solution>
   <Folder Name="/.github/" />
-  <Folder Name="/.github/workflows/">
+  <Folder Name="/.github/workflows/" Id="e7a3c856-6834-d657-f2f0-05592df2dde9">
     <File Path="dotnet.yml" />
   </Folder>
   <Folder Name="/Solution Items/">
