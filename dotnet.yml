@@ -1,0 +1,29 @@
+name: .NET Build
+
+on:
+  push:
+    branches:
+      - master
+      - features
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore GymManagement.slnx
+
+      - name: Build
+        run: dotnet build GymManagement.slnx --configuration Release --no-restore
