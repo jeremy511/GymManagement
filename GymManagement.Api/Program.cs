@@ -133,6 +133,17 @@ builder.Host.UseSerilog((context, configuration) =>
 
 });
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("Frontend", policy =>
+    {
+        policy
+            .WithOrigins("http://localhost:5173")
+            .AllowAnyHeader()
+            .AllowAnyMethod();
+    });
+});
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -154,7 +165,9 @@ if (app.Environment.IsDevelopment())
     await DbInitializer.SeedAsync(db, hasher);
 }
 
+
 app.UseHttpsRedirection();
+app.UseCors("Frontend");
 app.UseIpRateLimiting();
 app.UseAuthentication();
 app.UseAuthorization();

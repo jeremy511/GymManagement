@@ -1,6 +1,6 @@
 <Solution>
   <Folder Name="/.github/" />
-  <Folder Name="/.github/workflows/" Id="e7a3c856-6834-d657-f2f0-05592df2dde9">
+  <Folder Name="/.github/workflows/">
     <File Path="dotnet.yml" />
   </Folder>
   <Folder Name="/Solution Items/">
@@ -8,4 +8,5 @@
     <File Path="global.json" />
   </Folder>
   <Project Path="GymManagement.Api/GymManagement.Api.csproj" />
+  <Project Path="GymManagement.Test/GymManagement.Test.csproj" Id="75b1ab59-0f80-45c3-a1b0-4b0a2f071143" />
 </Solution>
